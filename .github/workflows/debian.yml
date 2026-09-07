@@ -32,7 +32,7 @@ jobs:
           dpkg-buildpackage -uc -us
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: debian-package
           path: ../lyxcat*.deb
