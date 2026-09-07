@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
     // Regex to remove basic inline formatting like \inset ... }
     let inset_regex = Regex::new(r"\\inset [^}]+}").unwrap();
     
-    // Case-sensitive regex targeting \SpecialChar followed by an identifier or a command (e.g., \ldots{})
+    // Case-sensitive regex targeting \SpecialChar followed by an identifier or a command
     let special_char_regex = Regex::new(r"\\SpecialChar\s+(\\[a-zA-Z]+(?:\{\})?|[a-zA-Z0-9_-]+)").unwrap();
 
     let mut in_layout = false;
@@ -33,17 +33,25 @@ fn main() -> io::Result<()> {
         } else if trimmed.starts_with("\\end_layout") {
             in_layout = false;
             if !paragraph.is_empty() {
-                // 1. Process and format \SpecialChar instances into [Name]
+                // Process and format \SpecialChar instances
                 let processed_special = special_char_regex.replace_all(&paragraph, |caps: &regex::Captures| {
-                    let matched = &caps[1];
-                    // Strip leading backslash and trailing brackets if it's a LaTeX-style command (like \ldots{})
-                    let clean_name = matched
-                        .trim_start_matches('\\')
-                        .trim_end_matches("{}");
-                    format!("[{}]", clean_name)
+                    let raw_match = &caps[1];
+                    
+                    // Match based on raw token appearance in the file
+                    match raw_match {
+                        "menuseparator" => "[>]".to_string(),
+                        "\\ldots{}" | "\\ldots" => "...".to_string(),
+                        _ => {
+                            // Strip leading backslash and trailing brackets for any other LaTeX-style commands
+                            let clean_name = raw_match
+                                .trim_start_matches('\\')
+                                .trim_end_matches("{}");
+                            format!("[{}]", clean_name)
+                        }
+                    }
                 });
 
-                // 2. Clean up structural inline formatting insets
+                // Clean up structural inline formatting insets
                 let clean_text = inset_regex.replace_all(&processed_special, "");
                 
                 println!("{}\n", clean_text.trim());
@@ -53,8 +61,7 @@ fn main() -> io::Result<()> {
         }
 
         if in_layout {
-            // Ignore sub-properties or layout metadata lines starting with a backslash
-            // BUT allow the line if it specifically contains our inline \SpecialChar command
+            // Include lines if they are body text or explicitly contain inline \SpecialChar commands
             if !trimmed.starts_with('\\') || trimmed.contains("\\SpecialChar") {
                 paragraph.push_str(&line);
                 paragraph.push(' ');
