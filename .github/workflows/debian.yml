@@ -17,7 +17,7 @@ jobs:
       run:
         shell: bash
     container:
-      image: debian:bookworm
+      image: debian:trixie
     steps:
       - uses: actions/checkout@v4
 
