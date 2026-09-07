@@ -53,7 +53,13 @@ jobs:
           # Copy the built binary; adjust path/name if different
           cp target/release/lyxcat "$PKGDIR/bin/lyxcat"
           chmod 0755 "$PKGDIR/bin/lyxcat"
-          echo "Package: $PKG\nVersion: $VERSION\nSection: utils\nPriority: optional\nArchitecture: $ARCH\nMaintainer: walley <walley@walley.org>\nDescription: lyxcat - minimal .lyx viewer binary" >  "$PKGDIR/DEBIAN/control" 
+          echo "Package: $PKG" >  "$PKGDIR/DEBIAN/control" 
+          echo "Version: $VERSION" >>  "$PKGDIR/DEBIAN/control" 
+          echo "Section: utils" >>  "$PKGDIR/DEBIAN/control" 
+          echo "Priority: optional" >>  "$PKGDIR/DEBIAN/control" 
+          echo "Architecture: $ARCH" >>  "$PKGDIR/DEBIAN/control" 
+          echo "Maintainer: walley <walley@walley.org>" >>  "$PKGDIR/DEBIAN/control" 
+          echo "Description: lyxcat - minimal .lyx viewer binary" >>  "$PKGDIR/DEBIAN/control" 
           chmod 0644 "$PKGDIR/DEBIAN/control"
           # Build the .deb
           dpkg-deb --build "$PKGDIR"
