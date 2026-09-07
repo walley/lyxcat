@@ -1,2 +1,3 @@
 # lyxcat
-lyxcat is a .lyx viewer, it is hardcoded into midnight commander, but it did not existed in reality, now it does
+lyxcat is a .lyx viewer, it is hardcoded into midnight commander.
+It did not exist in reality, but now it does.
