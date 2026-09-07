@@ -1,0 +1,38 @@
+name: Debian Package Build
+
+on:
+  push:
+    branches:
+      - github
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - github
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            debhelper-compat \
+            cargo \
+            rustc \
+            build-essential
+
+      - name: Build Debian package
+        run: |
+          dpkg-buildpackage -uc -us
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: debian-package
+          path: ../lyxcat*.deb
