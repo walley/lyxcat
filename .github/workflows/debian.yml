@@ -18,21 +18,59 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install build dependencies
         run: |
+          set -euo pipefail
           apt-get update
-          apt-get install -y \
-            debhelper-compat \
+          apt-get install -y --no-install-recommends \
+            ca-certificates \
+            build-essential \
             cargo \
             rustc \
-            build-essential
+            dpkg-dev \
+            file \
+            xz-utils
 
-      - name: Build Debian package
+      - name: Build release binary
         run: |
-          dpkg-buildpackage -uc -us
+          set -euo pipefail
+          cargo build --release
 
-      - name: Upload artifacts
+      - name: Create minimal .deb (binary to /bin)
+        run: |
+          set -euo pipefail
+          PKG=lyxcat
+          # Extract version from Cargo.toml (first matching version = "x.y.z")
+          VERSION=$(awk -F\" '/^version[[:space:]]*=/ {print $2; exit}' Cargo.toml)
+          if [ -z "$VERSION" ]; then
+            echo "Could not determine version from Cargo.toml"; exit 1
+          fi
+          ARCH=$(dpkg --print-architecture)
+          PKGDIR=package_root
+          echo "Preparing package ${PKG}_${VERSION}_${ARCH}.deb"
+          rm -rf "$PKGDIR"
+          mkdir -p "$PKGDIR/bin" "$PKGDIR/DEBIAN"
+          # Copy the built binary; adjust path/name if different
+          cp target/release/lyxcat "$PKGDIR/bin/lyxcat"
+          chmod 0755 "$PKGDIR/bin/lyxcat"
+          cat > "$PKGDIR/DEBIAN/control" <<EOF
+Package: $PKG
+Version: $VERSION
+Section: utils
+Priority: optional
+Architecture: $ARCH
+Maintainer: walley <walley@walley.org>
+Description: lyxcat - minimal .lyx viewer binary
+ A tiny package containing the lyxcat binary that installs to /bin.
+EOF
+          chmod 0644 "$PKGDIR/DEBIAN/control"
+          # Build the .deb
+          dpkg-deb --build "$PKGDIR"
+          mv "${PKGDIR}.deb" "${PKG}_${VERSION}_${ARCH}.deb"
+          ls -lh "${PKG}_${VERSION}_${ARCH}.deb"
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: debian-package
-          path: ../lyxcat*.deb
+          name: lyxcat-deb
+          path: lyxcat_*.deb
