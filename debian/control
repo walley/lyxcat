@@ -1,0 +1,19 @@
+Source: lyxcat
+Section: text
+Priority: optional
+Maintainer: walley <walley@walley.org>
+Homepage: https://github.com/walley/lyxcat
+Standards-Version: 4.5.0
+Rules-Requires-Root: no
+Build-Depends: debhelper-compat (= 13),
+               cargo,
+               rustc
+
+Package: lyxcat
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Description: LyX document viewer and extractor
+ lyxcat is a command-line tool to view and extract text from LyX (.lyx) documents.
+ It supports inline text extraction, special character processing, and note/footnote
+ handling. Originally designed as a viewer for midnight commander.
