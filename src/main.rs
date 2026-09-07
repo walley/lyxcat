@@ -4,7 +4,6 @@ use std::io::{self, BufRead, BufReader};
 use regex::Regex;
 
 fn main() -> io::Result<()> {
-    // Get the filename argument from mc
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         eprintln!("Usage: lyxcat <file.lyx>");
@@ -17,6 +16,9 @@ fn main() -> io::Result<()> {
 
     // Regex to remove basic inline formatting like \inset ... }
     let inset_regex = Regex::new(r"\\inset [^}]+}").unwrap();
+    
+    // Case-sensitive regex targeting \SpecialChar followed by an identifier or a command (e.g., \ldots{})
+    let special_char_regex = Regex::new(r"\\SpecialChar\s+(\\[a-zA-Z]+(?:\{\})?|[a-zA-Z0-9_-]+)").unwrap();
 
     let mut in_layout = false;
     let mut paragraph = String::new();
@@ -31,8 +33,19 @@ fn main() -> io::Result<()> {
         } else if trimmed.starts_with("\\end_layout") {
             in_layout = false;
             if !paragraph.is_empty() {
-                // Strip out LyX specific inline formatting
-                let clean_text = inset_regex.replace_all(&paragraph, "");
+                // 1. Process and format \SpecialChar instances into [Name]
+                let processed_special = special_char_regex.replace_all(&paragraph, |caps: &regex::Captures| {
+                    let matched = &caps[1];
+                    // Strip leading backslash and trailing brackets if it's a LaTeX-style command (like \ldots{})
+                    let clean_name = matched
+                        .trim_start_matches('\\')
+                        .trim_end_matches("{}");
+                    format!("[{}]", clean_name)
+                });
+
+                // 2. Clean up structural inline formatting insets
+                let clean_text = inset_regex.replace_all(&processed_special, "");
+                
                 println!("{}\n", clean_text.trim());
                 paragraph.clear();
             }
@@ -41,9 +54,10 @@ fn main() -> io::Result<()> {
 
         if in_layout {
             // Ignore sub-properties or layout metadata lines starting with a backslash
-            if !trimmed.starts_with('\\') {
+            // BUT allow the line if it specifically contains our inline \SpecialChar command
+            if !trimmed.starts_with('\\') || trimmed.contains("\\SpecialChar") {
                 paragraph.push_str(&line);
-                paragraph.push(' '); // Keep word separation across text wrappers
+                paragraph.push(' ');
             }
         }
     }
