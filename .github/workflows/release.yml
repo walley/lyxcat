@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    container:
+      image: debian:trixie
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ca-certificates \
+            build-essential \
+            cargo \
+            rustc \
+            dpkg-dev \
+            debhelper \
+            file \
+            xz-utils
+
+      - name: Build Debian package
+        run: |
+          set -euo pipefail
+          cd /github/workspace
+          dpkg-buildpackage -uc -us -b
+
+      - name: Upload deb to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ../lyxcat_*.deb
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
