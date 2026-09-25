@@ -4,6 +4,8 @@ A command-line tool to view and extract plain text from LyX (.lyx) documents.
 
 ## Description
 
+lyxcat is **hardcoded into midnight commander** - once installed, it will work immediately as the default viewer for `.lyx` files in mc without any additional configuration.
+
 lyxcat parses LyX document files and outputs their text content in a human-readable format. It handles:
 
 - Paragraphs and layouts (Title, Section, Enumerate, etc.)
@@ -38,6 +40,8 @@ Download the latest `.deb` from [GitHub Releases](https://github.com/walley/lyxc
 wget https://github.com/walley/lyxcat/releases/download/v0.1.1/lyxcat_0.1.0-1_amd64.deb
 sudo dpkg -i lyxcat_0.1.0-1_amd64.deb
 ```
+
+Once installed, **open midnight commander and navigate to any `.lyx` file - press Enter or F3 to view it with lyxcat automatically**.
 
 ## Usage
 
