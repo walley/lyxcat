@@ -107,10 +107,47 @@ Notes and footnotes are extracted and displayed at the end of the output with ma
 
 ## Project Info
 
+### Overview
+
+lyxcat was born from a simple idea: LyX documents (`.lyx` files) contain rich text content, but there was no easy way to quickly preview them from the command line or within file managers. While LyX itself is a powerful document processor, sometimes you just want to read the text without launching the full application.
+
+### Technical Details
+
+- **Language**: Rust (2021 Edition)
 - **License**: AGPL-3.0+
 - **Author**: walley <walley@walley.org>
-- **Source**: https://github.com/walley/lyxcat
-- **Issues**: https://github.com/walley/lyxcat/issues
+- **Repository**: https://github.com/walley/lyxcat
+- **Issue Tracker**: https://github.com/walley/lyxcat/issues
+
+### Dependencies
+
+- **Runtime**: None (statically compiled binary)
+- **Build**: Rust toolchain (cargo, rustc)
+- **Debian Packaging**: debhelper, dpkg-dev, cargo, rustc
+
+### Platform Support
+
+lyxcat is designed to work on any platform where Rust compiles:
+
+- **Linux** (primary target, Debian packages available)
+- **macOS** (via `cargo install`)
+- **Windows** (via `cargo install`, experimental)
+- **BSD** (via `cargo install`)
+
+The Debian package is built for `amd64` architecture. Other architectures can be built from source.
+
+### Versioning
+
+lyxcat follows semantic versioning (SemVer) principles:
+- `MAJOR` version for breaking changes
+- `MINOR` version for new features
+- `PATCH` version for bug fixes
+
+### Related Projects
+
+- [LyX](https://www.lyx.org/) - The document processor that lyxcat reads
+- [pandoc](https://pandoc.org/) - Universal document converter (supports LyX via LaTeX)
+- [midnight commander](https://midnight-commander.org/) - File manager where lyxcat is integrated
 
 ## Contributing
 
