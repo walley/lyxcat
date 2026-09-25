@@ -31,46 +31,18 @@ jobs:
             cargo \
             rustc \
             dpkg-dev \
+            debhelper \
             file \
             xz-utils
 
-      - name: Build release binary
+      - name: Build Debian package
         run: |
           set -euo pipefail
-          cargo build --release
-
-      - name: Create minimal .deb (binary to /bin)
-        run: |
-          set -euo pipefail
-          PKG=lyxcat
-          # Extract version from Cargo.toml (first matching version = "x.y.z")
-          VERSION=$(awk -F\" '/^version[[:space:]]*=/ {print $2; exit}' Cargo.toml)
-          if [ -z "$VERSION" ]; then
-            echo "Could not determine version from Cargo.toml"; exit 1
-          fi
-          ARCH=$(dpkg --print-architecture)
-          PKGDIR=package_root
-          echo "Preparing package ${PKG}_${VERSION}_${ARCH}.deb"
-          rm -rf "$PKGDIR"
-          mkdir -p "$PKGDIR/bin" "$PKGDIR/DEBIAN"
-          # Copy the built binary; adjust path/name if different
-          cp target/release/lyxcat "$PKGDIR/bin/lyxcat"
-          chmod 0755 "$PKGDIR/bin/lyxcat"
-          echo "Package: $PKG" >  "$PKGDIR/DEBIAN/control" 
-          echo "Version: $VERSION" >>  "$PKGDIR/DEBIAN/control" 
-          echo "Section: utils" >>  "$PKGDIR/DEBIAN/control" 
-          echo "Priority: optional" >>  "$PKGDIR/DEBIAN/control" 
-          echo "Architecture: $ARCH" >>  "$PKGDIR/DEBIAN/control" 
-          echo "Maintainer: walley <walley@walley.org>" >>  "$PKGDIR/DEBIAN/control" 
-          echo "Description: lyxcat - minimal .lyx viewer binary" >>  "$PKGDIR/DEBIAN/control" 
-          chmod 0644 "$PKGDIR/DEBIAN/control"
-          # Build the .deb
-          dpkg-deb --build "$PKGDIR"
-          mv "${PKGDIR}.deb" "${PKG}_${VERSION}_${ARCH}.deb"
-          ls -lh "${PKG}_${VERSION}_${ARCH}.deb"
+          cd /github/workspace
+          dpkg-buildpackage -uc -us -b
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: lyxcat-deb
-          path: lyxcat_*.deb
+          path: ../lyxcat_*.deb
