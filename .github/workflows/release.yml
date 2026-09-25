@@ -16,6 +16,8 @@ jobs:
         shell: bash
     container:
       image: debian:trixie
+    outputs:
+      deb_filename: ${{ steps.get_deb.outputs.filename }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,8 +45,10 @@ jobs:
           set -euo pipefail
           mv ../lyxcat_*.deb .
 
-      - name: List debs
-        run: ls -la *.deb
+      - name: Get deb filename
+        id: get_deb
+        run: |
+          echo "filename=$(ls *.deb)" >> $GITHUB_OUTPUT
 
       - name: Create Release
         id: create_release
@@ -63,6 +67,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: lyxcat_*.deb
-          asset_name: lyxcat_${{ github.ref_name }}_amd64.deb
+          asset_path: ${{ steps.get_deb.outputs.filename }}
+          asset_name: ${{ steps.get_deb.outputs.filename }}
           asset_content_type: application/vnd.debian.binary-package
