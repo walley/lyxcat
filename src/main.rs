@@ -1,28 +1,48 @@
-use std::env;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{BufRead, BufReader};
+use std::path::PathBuf;
+
+use anyhow::{Context, Result};
+use clap::Parser;
 use regex::Regex;
 
-fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: lyxcat <file.lyx>");
-        std::process::exit(1);
-    }
+/// lyxcat - A command-line tool to view and extract text from LyX (.lyx) documents.
+///
+/// lyxcat parses LyX document files and outputs their text content in a readable format.
+/// It handles inline formatting, special characters, notes, and footnotes.
+#[derive(Parser, Debug)]
+#[command(name = "lyxcat")]
+#[command(author = "walley <walley@walley.org>")]
+#[command(version = "0.1.0")]
+#[command(about = "View and extract text from LyX (.lyx) documents")]
+#[command(long_about = "lyxcat is a command-line tool to view and extract text from LyX (.lyx) documents.\nIt supports inline text extraction, special character processing, and note/footnote\nhandling. Originally designed as a viewer for midnight commander.")]
+struct Args {
+    /// The LyX (.lyx) file to view
+    #[arg(value_name = "FILE")]
+    file: PathBuf,
+}
 
-    let file_path = &args[1];
-    let file = File::open(file_path)?;
+fn main() -> Result<()> {
+    let args = Args::parse();
+    let file_path = &args.file;
+
+    let file = File::open(file_path)
+        .with_context(|| format!("Failed to open file: {}", file_path.display()))?;
     let reader = BufReader::new(file);
 
     // Regex to remove basic inline formatting like \inset ... }
-    let inset_regex = Regex::new(r"\\inset [^}]+}").unwrap();
-    
+    let inset_regex = Regex::new(r"\\inset [^}]+}")
+        .context("Failed to compile inset regex")?;
+
     // Case-sensitive regex targeting \SpecialChar followed by an identifier or a command
-    let special_char_regex = Regex::new(r"\\SpecialChar\s+(\\[a-zA-Z]+(?:\{\})?|[a-zA-Z0-9_-]+)").unwrap();
+    let special_char_regex = Regex::new(r"\\SpecialChar\s+(\\[a-zA-Z]+(?:\{\})?|[a-zA-Z0-9_-]+)")
+        .context("Failed to compile special_char regex")?;
 
     // Regex to detect note and footnote insets
-    let note_regex = Regex::new(r"\\begin_inset Note").unwrap();
-    let footnote_regex = Regex::new(r"\\begin_inset Foot").unwrap();
+    let note_regex = Regex::new(r"\\begin_inset Note")
+        .context("Failed to compile note regex")?;
+    let footnote_regex = Regex::new(r"\\begin_inset Foot")
+        .context("Failed to compile footnote regex")?;
 
     let mut in_layout = false;
     let mut in_note = false;
@@ -60,7 +80,7 @@ fn main() -> io::Result<()> {
                 note_in_layout = false;
                 continue;
             }
-            
+
             if trimmed.starts_with("\\begin_layout") {
                 note_in_layout = true;
                 continue;
@@ -71,7 +91,7 @@ fn main() -> io::Result<()> {
                 }
                 continue;
             }
-            
+
             if note_in_layout {
                 if !trimmed.starts_with('\\') || trimmed.contains("\\SpecialChar") {
                     note_content.push_str(&line);
@@ -100,7 +120,7 @@ fn main() -> io::Result<()> {
                 footnote_in_layout = false;
                 continue;
             }
-            
+
             if trimmed.starts_with("\\begin_layout") {
                 footnote_in_layout = true;
                 continue;
@@ -111,7 +131,7 @@ fn main() -> io::Result<()> {
                 }
                 continue;
             }
-            
+
             if footnote_in_layout {
                 if !trimmed.starts_with('\\') || trimmed.contains("\\SpecialChar") {
                     footnote_content.push_str(&line);
@@ -131,7 +151,7 @@ fn main() -> io::Result<()> {
                 // Process and format \SpecialChar instances
                 let processed_special = special_char_regex.replace_all(&paragraph, |caps: &regex::Captures| {
                     let raw_match = &caps[1];
-                    
+
                     // Match based on raw token appearance in the file
                     match raw_match {
                         "menuseparator" => "[>]".to_string(),
@@ -148,7 +168,7 @@ fn main() -> io::Result<()> {
 
                 // Clean up structural inline formatting insets
                 let clean_text = inset_regex.replace_all(&processed_special, "");
-                
+
                 println!("{}\n", clean_text.trim());
                 paragraph.clear();
             }

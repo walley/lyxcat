@@ -8,3 +8,9 @@ license = "AGPL-3.0"
 
 [dependencies]
 regex = "1.13.1"
+clap = { version = "4.5", features = ["derive"] }
+anyhow = "1.0"
+
+[build-dependencies]
+clap = { version = "4.5", features = ["derive"] }
+clap_mangen = "0.2"
