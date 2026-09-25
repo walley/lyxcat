@@ -98,17 +98,17 @@ impl LayoutType {
 
     fn prefix(&self) -> &'static str {
         match self {
-            LayoutType::Title => "\n# ",
-            LayoutType::Section | LayoutType::SectionStar => "\n## ",
-            LayoutType::Subsection | LayoutType::SubsectionStar => "\n### ",
-            LayoutType::Subsubsection | LayoutType::SubsubsectionStar => "\n#### ",
+            LayoutType::Title => "\n",
+            LayoutType::Section | LayoutType::SectionStar => "\n",
+            LayoutType::Subsection | LayoutType::SubsectionStar => "\n",
+            LayoutType::Subsubsection | LayoutType::SubsubsectionStar => "\n",
             LayoutType::TitlePage => "\n",
-            LayoutType::Author => "\n_",
+            LayoutType::Author => "\n",
             LayoutType::Date => "\n",
-            LayoutType::Abstract => "\n> ",
+            LayoutType::Abstract => "\n",
             LayoutType::Enumerate => "\n  * ",
             LayoutType::Itemize => "\n  - ",
-            LayoutType::Quote => "\n> ",
+            LayoutType::Quote => "\n",
             LayoutType::Verse => "\n  ",
             LayoutType::Center => "\n",
             LayoutType::FlushLeft => "\n",
@@ -120,7 +120,7 @@ impl LayoutType {
 
     fn suffix(&self) -> &'static str {
         match self {
-            LayoutType::Author => "_",
+            LayoutType::Author => "",
             LayoutType::Abstract => "",
             _ => "",
         }
@@ -446,8 +446,8 @@ fn main() -> Result<()> {
             current_layout = LayoutType::from_name(layout_name);
             in_layout = true;
 
-            // For list items and headings, start fresh
-            if current_layout.is_list() || current_layout.is_heading() {
+            // For list items, start fresh
+            if current_layout.is_list() {
                 // Process the current paragraph before starting new layout
                 if !paragraph.is_empty() {
                     let processed = process_paragraph(&paragraph, &special_char_regex, &special_char_map, &inset_regex);
