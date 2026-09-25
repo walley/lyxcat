@@ -40,8 +40,13 @@ jobs:
           set -euo pipefail
           dpkg-buildpackage -uc -us -b
 
+      - name: Move debs to current directory
+        run: |
+          set -euo pipefail
+          mv ../lyxcat_*.deb .
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: lyxcat-deb
-          path: ../lyxcat_*.deb
+          path: lyxcat_*.deb
