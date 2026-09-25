@@ -30,12 +30,40 @@ fn main() -> Result<()> {
         .with_context(|| format!("Failed to open file: {}", file_path.display()))?;
     let reader = BufReader::new(file);
 
+    // Special character mappings (LyX SpecialChar -> plain text)
+    let special_char_map: std::collections::HashMap<&str, &str> = [
+        ("menuseparator", ">"),
+        ("softhyphen", "-"),
+        ("LyX", "LyX"),
+        ("LaTeX", "LaTeX"),
+        ("TeX", "TeX"),
+        ("\\ldots{}", "..."),
+        ("\\ldots", "..."),
+        ("em dash", "--"),
+        ("en dash", "-"),
+        ("leftarrow", "<- "),
+        ("rightarrow", " ->"),
+        ("le", "<="),
+        ("ge", ">="),
+        ("neq", "!="),
+        ("approx", "~="),
+        ("pm", "+"),
+        ("times", "x"),
+        ("div", "/"),
+        ("copyright", "(c)"),
+        ("registered", "(R)"),
+        ("trademark", "TM"),
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
     // Regex to remove basic inline formatting like \inset ... }
     let inset_regex = Regex::new(r"\\inset [^}]+}")
         .context("Failed to compile inset regex")?;
 
-    // Case-sensitive regex targeting \SpecialChar followed by an identifier or a command
-    let special_char_regex = Regex::new(r"\\SpecialChar\s+(\\[a-zA-Z]+(?:\{\})?|[a-zA-Z0-9_-]+)")
+    // Regex to match \SpecialChar followed by identifier or command
+    let special_char_regex = Regex::new(r"\\SpecialChar\s+([^\\\s]+)")
         .context("Failed to compile special_char regex")?;
 
     // Regex to detect note and footnote insets
@@ -152,18 +180,16 @@ fn main() -> Result<()> {
                 let processed_special = special_char_regex.replace_all(&paragraph, |caps: &regex::Captures| {
                     let raw_match = &caps[1];
 
-                    // Match based on raw token appearance in the file
-                    match raw_match {
-                        "menuseparator" => "[>]".to_string(),
-                        "\\ldots{}" | "\\ldots" => "...".to_string(),
-                        _ => {
-                            // Strip leading backslash and trailing brackets for any other LaTeX-style commands
-                            let clean_name = raw_match
-                                .trim_start_matches('\\')
-                                .trim_end_matches("{}");
-                            format!("[{}]", clean_name)
-                        }
+                    // Look up in the mapping table first
+                    if let Some(&replacement) = special_char_map.get(raw_match) {
+                        return replacement.to_string();
                     }
+
+                    // Default: strip leading backslash and trailing brackets
+                    let clean_name = raw_match
+                        .trim_start_matches('\\')
+                        .trim_end_matches("{}");
+                    format!("[{}]", clean_name)
                 });
 
                 // Clean up structural inline formatting insets
